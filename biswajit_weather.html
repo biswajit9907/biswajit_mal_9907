@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dynamic Weather Dashboard</title>
+<style>
+:root{
+  --bg:#0f0f2d; --card:#161b33; --muted:#9aa6b2; --accent:#ff6ec7;
+  --accent2:#60a5fa; --accent3:#facc15;
+}
+*{box-sizing:border-box;font-family:"Poppins",sans-serif;margin:0;padding:0;}
+body{
+  min-height:100vh;
+  background:linear-gradient(180deg,#0f0f2d 0%, #1b1f45 60%, #0a0c1a 100%);
+  color:#e6eef6;display:flex;align-items:center;justify-content:center;
+  padding:28px;overflow-x:hidden;
+}
+.wrap{width:100%;max-width:980px;z-index:2;position:relative;}
+header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+h1{font-size:22px;color:var(--accent);}
+p.lead{color:var(--muted);margin-top:4px;font-size:13px;}
+.card{
+  background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+  border-radius:18px;padding:20px;
+  display:grid;grid-template-columns:1fr 320px;gap:20px;
+  box-shadow:0 6px 40px rgba(0,0,0,0.6);
+  backdrop-filter:blur(12px);
+}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+input[type=text]{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  padding:10px 12px;border-radius:12px;color:inherit;min-width:160px;flex:1;}
+button{background:var(--accent);border:0;padding:10px 14px;border-radius:12px;
+  color:#fff;cursor:pointer;font-weight:600;transition:0.2s;}
+button:hover{transform:scale(1.05);box-shadow:0 0 10px var(--accent);}
+.secondary{background:transparent;border:1px solid rgba(255,255,255,0.2);color:var(--muted);font-weight:600;}
+.main{padding:10px;}
+.now{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.temp{font-size:60px;font-weight:700;line-height:1;color:var(--accent2);}
+.meta{color:var(--muted);}
+.cond{display:flex;flex-direction:column;align-items:center;text-align:center;}
+.smallcard{background:rgba(255,255,255,0.05);padding:14px;border-radius:12px;margin-top:12px;}
+.sidebar{padding:14px;background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+  border-radius:14px;display:flex;flex-direction:column;gap:12px;}
+.location{font-weight:700;color:var(--accent3);}
+.icon{width:96px;height:96px;filter:drop-shadow(0 0 10px rgba(255,255,255,0.3));}
+.forecast{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;}
+.forecast-day{flex:1 1 80px;background:rgba(255,255,255,0.05);padding:10px;border-radius:12px;text-align:center;}
+footer{margin-top:12px;color:var(--muted);font-size:13px;text-align:center;}
+
+/* Tablet */
+@media (max-width:880px){
+  .card{grid-template-columns:1fr;gap:16px;}
+  .icon{width:80px;height:80px;}
+  .temp{font-size:44px;}
+  .sidebar{flex-direction:row;flex-wrap:wrap;justify-content:space-between;}
+}
+
+/* Mobile */
+@media (max-width:600px){
+  body{padding:16px;}
+  h1{font-size:18px;}
+  p.lead{font-size:12px;}
+  .card{padding:14px;grid-template-columns:1fr;gap:12px;}
+  .now{flex-direction:column;align-items:center;text-align:center;}
+  .temp{font-size:36px;}
+  .smallcard{font-size:13px;padding:10px;}
+  footer{font-size:11px;}
+  .controls{flex-direction:column;gap:6px;}
+  input[type=text]{width:100%;}
+  .forecast{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px;}
+  .forecast-day{flex:1 1 100px;}
+  .sidebar{flex-direction:column;}
+  .sidebar .smallcard{margin-top:6px;}
+}
+
+/* Weather animations */
+#weatherAnim{position:fixed;top:0;left:0;width:100%;height:100%;overflow:hidden;z-index:1;pointer-events:none;}
+.sun{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,var(--accent3),#f97316);position:absolute;top:60px;left:10%;animation:sunMove 20s linear infinite alternate;box-shadow:0 0 40px rgba(250,200,40,0.8);display:none;}
+.moon{width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,#f0e9d2,#cfcfcf);position:absolute;top:60px;left:80%;box-shadow:0 0 20px rgba(255,255,255,0.6);animation:moonMove 20s linear infinite alternate;display:none;}
+@keyframes sunMove{from{transform:translateY(0)}to{transform:translateY(40px)}}
+@keyframes moonMove{from{transform:translateY(0)}to{transform:translateY(30px)}}
+.cloud{width:200px;height:70px;background:#fff;border-radius:40px;position:absolute;top:100px;left:-250px;box-shadow:60px 0 60px 20px rgba(255,255,255,0.6);animation:cloudMove 60s linear infinite;opacity:0.3;filter:blur(2px);}
+@keyframes cloudMove{from{left:-250px}to{left:120%}}
+.raindrop{position:absolute;width:3px;height:14px;background:var(--accent2);top:-20px;border-radius:2px;animation:rainFall 2s linear infinite;}
+@keyframes rainFall{to{transform:translateY(110vh)}}
+.star{position:absolute;width:2px;height:2px;background:white;border-radius:50%;animation:twinkle 2s infinite alternate;}
+@keyframes twinkle{from{opacity:0.2;transform:scale(0.8);} to{opacity:1;transform:scale(1.4);}}
+</style>
+</head>
+<body>
+<div id="weatherAnim">
+  <div class="sun" id="animSun"></div>
+  <div class="moon" id="animMoon"></div>
+  <div class="cloud" id="animCloud"></div>
+</div>
+
+<div class="wrap">
+<header>
+  <div>
+    <h1>🌈 Dynamic Weather Dashboard</h1>
+    <p class="lead"></p>
+  </div>
+  <div class="controls">
+    <input id="cityInput" placeholder="Enter city" />
+    <button id="searchBtn">Search</button>
+  </div>
+</header>
+
+<div class="card">
+  <section class="main">
+    <div id="status" class="smallcard" style="display:none"></div>
+    <div class="now smallcard" id="nowCard" style="display:none">
+      <div class="cond">
+        <img id="condIcon" class="icon" src="" alt="icon" />
+        <div id="conditionText" style="font-weight:700;margin-top:6px"></div>
+        <div id="feelsLike" class="meta"></div>
+      </div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div>
+            <div class="temp" id="tempVal">--°C</div>
+            <div class="meta" id="localTime">Local time: --</div>
+          </div>
+          <div style="text-align:right">
+            <div class="location" id="locationName">--</div>
+            <div class="meta" id="region">--</div>
+          </div>
+        </div>
+        <div class="smallcard" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+          <div><strong>Humidity</strong><div class="meta" id="humidity">-- %</div></div>
+          <div><strong>Wind</strong><div class="meta" id="wind">-- kph</div></div>
+          <div><strong>Pressure</strong><div class="meta" id="pressure">-- mb</div></div>
+          <div><strong>UV</strong><div class="meta" id="uv">--</div></div>
+        </div>
+        <div id="forecast" class="forecast"></div>
+      </div>
+    </div>
+    <div id="error" class="smallcard" style="display:none;color:#ffdddd;background:rgba(255,20,20,0.08)"></div>
+  </section>
+
+  <aside class="sidebar">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-size:13px;color:var(--muted)">Temperature unit</div>
+        <div style="margin-top:6px">
+          <button id="cBtn" class="secondary">°C</button>
+          <button id="fBtn" class="secondary">°F</button>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:13px;color:var(--muted)">Last update</div>
+        <div id="lastUpdate" style="margin-top:6px;color:var(--muted)">—</div>
+      </div>
+    </div>
+    <div class="smallcard">
+      <div style="font-size:13px;color:var(--muted)">Quick picks</div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <button class="quickBtn secondary">London</button>
+        <button class="quickBtn secondary">New York</button>
+        <button class="quickBtn secondary">Mumbai</button>
+        <button class="quickBtn secondary">Tokyo</button>
+      </div>
+    </div>
+  </aside>
+</div>
+<footer></footer>
+</div>
+
+<script>
+const API_KEY="0a001d9934e243aba65123047251909";
+const BASE="https://api.weatherapi.com/v1/forecast.json";
+
+const cityInput=document.getElementById("cityInput");
+const searchBtn=document.getElementById("searchBtn");
+const status=document.getElementById("status");
+const nowCard=document.getElementById("nowCard");
+const condIcon=document.getElementById("condIcon");
+const tempVal=document.getElementById("tempVal");
+const conditionText=document.getElementById("conditionText");
+const feelsLike=document.getElementById("feelsLike");
+const locationName=document.getElementById("locationName");
+const region=document.getElementById("region");
+const localTime=document.getElementById("localTime");
+const humidity=document.getElementById("humidity");
+const wind=document.getElementById("wind");
+const pressure=document.getElementById("pressure");
+const uv=document.getElementById("uv");
+const errorBox=document.getElementById("error");
+const lastUpdate=document.getElementById("lastUpdate");
+const cBtn=document.getElementById("cBtn");
+const fBtn=document.getElementById("fBtn");
+const quickBtns=Array.from(document.querySelectorAll(".quickBtn"));
+const animSun=document.getElementById("animSun");
+const animMoon=document.getElementById("animMoon");
+const animCloud=document.getElementById("animCloud");
+const forecastContainer=document.getElementById("forecast");
+
+let unit=localStorage.getItem("unit")||"C";
+setUnitUI();
+
+function setUnitUI(){
+  if(unit==="C"){cBtn.style.background="var(--accent2)";fBtn.style.background="";}
+  else{fBtn.style.background="var(--accent2)";cBtn.style.background="";}
+}
+
+cBtn.addEventListener("click",()=>{unit="C";localStorage.setItem("unit",unit);setUnitUI();if(lastQuery)fetchAndRender(lastQuery)});
+fBtn.addEventListener("click",()=>{unit="F";localStorage.setItem("unit",unit);setUnitUI();if(lastQuery)fetchAndRender(lastQuery)});
+quickBtns.forEach(b=>b.addEventListener("click",e=>{cityInput.value=e.target.innerText;fetchAndRender(e.target.innerText)}));
+searchBtn.addEventListener("click",()=>{const q=cityInput.value.trim();if(!q){flashStatus("Please enter a city",true);return}fetchAndRender(q)});
+cityInput.addEventListener("keydown",e=>{if(e.key==="Enter")searchBtn.click()});
+
+let lastQuery=null;
+function buildUrl(q){ return `${BASE}?key=${API_KEY}&q=${encodeURIComponent(q)}&days=5&aqi=yes`; }
+
+async function fetchAndRender(q){
+  errorBox.style.display="none";status.style.display="block";status.innerText="Fetching weather...";
+  lastQuery=q;
+  try{
+    const resp=await fetch(buildUrl(q));
+    if(!resp.ok) throw new Error(`API error ${resp.status}`);
+    const data=await resp.json();
+    renderData(data);
+    status.style.display="none";
+    lastUpdate.innerText=new Date().toLocaleString();
+  }catch(err){status.style.display="none";showError("Could not fetch weather. "+err.message);}
+}
+
+function renderData(d){
+  if(!d||!d.current||!d.location){showError("Bad API data");return;}
+  nowCard.style.display="flex";
+
+  let icon=d.current.condition.icon;
+  if(icon&&icon.startsWith("//")) icon="https:"+icon;
+  condIcon.src=icon;
+  condIcon.alt=d.current.condition.text||"";
+  conditionText.innerText=d.current.condition.text;
+  feelsLike.innerText=`Feels like: ${unit==="C"?d.current.feelslike_c+"°C":d.current.feelslike_f+"°F"}`;
+  tempVal.innerText=unit==="C"?`${d.current.temp_c}°C`:`${d.current.temp_f}°F`;
+  locationName.innerText=d.location.name;
+  region.innerText=`${d.location.region} • ${d.location.country}`;
+  localTime.innerText=`Local time: ${d.location.localtime}`;
+  humidity.innerText=`${d.current.humidity} %`;
+  wind.innerText=`${d.current.wind_kph} kph (${d.current.wind_dir})`;
+  pressure.innerText=`${d.current.pressure_mb} mb`;
+  uv.innerText=d.current.uv;
+
+  renderForecast(d.forecast.forecastday.slice(1,5)); 
+  syncAnimations(d.current.condition.text, d.current.is_day);
+}
+
+function renderForecast(forecast){
+  forecastContainer.innerHTML="";
+  forecast.forEach(day=>{
+    let icon=day.day.condition.icon;
+    if(icon.startsWith("//")) icon="https:"+icon;
+    const div=document.createElement("div");
+    div.className="forecast-day";
+    div.innerHTML=`
+      <div style="font-weight:600;margin-bottom:4px">${new Date(day.date).toLocaleDateString('en-US',{weekday:'short'})}</div>
+      <img src="${icon}" style="width:48px;height:48px"/>
+      <div>${unit==="C"?day.day.avgtemp_c+"°C":day.day.avgtemp_f+"°F"}</div>
+      <div style="font-size:12px;color:var(--muted)">${day.day.condition.text}</div>
+    `;
+    forecastContainer.appendChild(div);
+  });
+}
+
+function showError(msg){errorBox.style.display="block";errorBox.innerText=msg;}
+function flashStatus(msg,isError=false){status.style.display="block";status.innerText=msg; if(isError)status.style.background="rgba(255,20,20,0.1)"; setTimeout(()=>{status.style.display="none";status.style.background=""},2000);}
+
+function useGeolocation(){
+  if(!navigator.geolocation){flashStatus("Geolocation not available",true);return;}
+  flashStatus("Requesting location…");
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const {latitude,longitude}=pos.coords;
+    const q=`${latitude},${longitude}`;
+    cityInput.value=q;fetchAndRender(q);
+  },err=>{showError("Location error: "+err.message)},{enableHighAccuracy:true,timeout:10000});
+}
+
+function syncAnimations(cond, is_day){
+  document.querySelectorAll(".raindrop").forEach(r=>r.remove());
+  document.querySelectorAll(".star").forEach(s=>s.remove());
+
+  const day = is_day === 1;
+  animSun.style.display = day ? "block" : "none";
+  animMoon.style.display = day ? "none" : "block";
+  animCloud.style.display = "block";
+
+  if(cond.toLowerCase().includes("rain")){
+    for(let i=0;i<80;i++){
+      const drop=document.createElement("div");
+      drop.className="raindrop";
+      drop.style.left=Math.random()*100+"%";
+      drop.style.animationDelay=(Math.random()*2)+"s";
+      document.getElementById("weatherAnim").appendChild(drop);
+    }
+  }
+
+  if(!day){
+    for(let i=0;i<40;i++){
+      const star=document.createElement("div");
+      star.className="star";
+      star.style.top=Math.random()*100+"%";
+      star.style.left=Math.random()*100+"%";
+      document.getElementById("weatherAnim").appendChild(star);
+    }
+  }
+}
+
+// ✅ Auto-fetch weather using live location on page load
+window.addEventListener("load", useGeolocation);
+</script>
+</body>
+</html>
